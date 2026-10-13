@@ -116,3 +116,19 @@ export function rollbackCompletedItem(item: StudyItem): StudyItem {
   };
 }
 
+// 2回目の復習待ち（6日後予定）から、1回目の復習待ち（今日）へロールバック
+export function rollbackStep2ToStep1(item: StudyItem): StudyItem {
+  const today = getTodayString();
+  // 履歴から直前の step: 1 完了ログを削除
+  const updatedHistory = item.history.filter((h) => h.step !== 1);
+
+  return {
+    ...item,
+    status: 'active',
+    currentStep: 1,
+    nextDueDate: today, // 今日やるべき復習に復活
+    history: updatedHistory
+  };
+}
+
+

@@ -1,13 +1,14 @@
 import React from 'react';
-import { Calendar, CalendarDays } from 'lucide-react';
+import { Calendar, CalendarDays, Undo2 } from 'lucide-react';
 import type { StudyItem } from '../types';
 import { formatJapaneseDate, getTodayString, getRelativeDateLabel } from '../utils/date';
 
 interface UpcomingListProps {
   items: StudyItem[];
+  onRollbackStep1?: (item: StudyItem) => void;
 }
 
-export const UpcomingList: React.FC<UpcomingListProps> = ({ items }) => {
+export const UpcomingList: React.FC<UpcomingListProps> = ({ items, onRollbackStep1 }) => {
   const todayStr = getTodayString();
 
   // 明日以降（nextDueDate > todayStr）で active なものを日付順にソート
@@ -76,10 +77,12 @@ export const UpcomingList: React.FC<UpcomingListProps> = ({ items }) => {
               <div className="space-y-2 pt-0.5">
                 {dateItems.map((item) => {
                   const isStep1 = item.currentStep === 1;
+                  const hasCompletedStep1 = item.history.some((h) => h.step === 1);
+
                   return (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between gap-2 py-1"
+                      className="flex items-center justify-between gap-2 py-1.5 border-b border-slate-50 last:border-b-0"
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-slate-800 truncate">
@@ -87,15 +90,29 @@ export const UpcomingList: React.FC<UpcomingListProps> = ({ items }) => {
                         </p>
                       </div>
 
-                      <span
-                        className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                          isStep1
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-purple-100 text-purple-700'
-                        }`}
-                      >
-                        {isStep1 ? '1回目' : '2回目'}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {/* 1回目の復習を完了して2回目待ちになっている場合、1回目未完了へのロールバックボタンを表示 */}
+                        {hasCompletedStep1 && onRollbackStep1 && (
+                          <button
+                            onClick={() => onRollbackStep1(item)}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 px-2 py-0.5 rounded-lg active:scale-95 transition-all"
+                            title="1回目の復習（未完了）にロールバックする"
+                          >
+                            <Undo2 className="w-3 h-3" />
+                            未完了に戻す
+                          </button>
+                        )}
+
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                            isStep1
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-purple-100 text-purple-700'
+                          }`}
+                        >
+                          {isStep1 ? '1回目の復習' : '2回目の復習'}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}

@@ -10,7 +10,7 @@ import { Toast } from './components/Toast';
 import { HelpModal } from './components/HelpModal';
 import { DataModal } from './components/DataModal';
 import type { StudyItem, ToastMessage } from './types';
-import { loadItems, saveItems, createStudyItem, progressReviewStep, rollbackCompletedItem } from './utils/storage';
+import { loadItems, saveItems, createStudyItem, progressReviewStep, rollbackCompletedItem, rollbackStep2ToStep1 } from './utils/storage';
 import { getTodayString, formatJapaneseDate } from './utils/date';
 
 export const App: React.FC = () => {
@@ -129,6 +129,22 @@ export const App: React.FC = () => {
     });
   };
 
+  // 2回目の復習待ち（今後の予定）から1回目の復習待ち（今日の復習）へのロールバック
+  const handleRollbackStep1 = (item: StudyItem) => {
+    const rolledBack = rollbackStep2ToStep1(item);
+    const updated = items.map((it) => (it.id === item.id ? rolledBack : it));
+    setItems(updated);
+    saveItems(updated);
+    setActiveTab('today');
+
+    showToast({
+      id: String(Date.now()),
+      title: '未完了に戻しました',
+      message: `「${item.title}」を1回目の復習待ち（今日やるべき復習）に戻しました`,
+      type: 'info'
+    });
+  };
+
   // トースト表示管理
   const showToast = (toastMsg: ToastMessage) => {
     setToast(toastMsg);
@@ -168,7 +184,7 @@ export const App: React.FC = () => {
           )}
 
           {activeTab === 'upcoming' && (
-            <UpcomingList items={items} />
+            <UpcomingList items={items} onRollbackStep1={handleRollbackStep1} />
           )}
 
           {activeTab === 'completed' && (
