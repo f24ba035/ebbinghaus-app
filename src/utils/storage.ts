@@ -3,50 +3,87 @@ import { getTodayString, addDays } from './date';
 
 const STORAGE_KEY = 'ebbinghaus_study_items_v1';
 
-// 初期サンプルデータ（初回訪問時のみ）
-const INITIAL_ITEMS: StudyItem[] = [
-  {
-    id: 'sample-1',
-    title: '英単語 デュオ3.0 Section 1〜3',
-    createdAt: addDays(getTodayString(), -1),
-    createdTimestamp: Date.now() - 86400000,
-    currentStep: 1,
-    nextDueDate: getTodayString(), // 今日やるべき復習（1回目）
-    status: 'active',
-    history: []
-  },
-  {
-    id: 'sample-2',
-    title: '基本情報技術者 ネットワーク層の基礎',
-    createdAt: addDays(getTodayString(), -7),
-    createdTimestamp: Date.now() - 7 * 86400000,
-    currentStep: 2,
-    nextDueDate: getTodayString(), // 今日やるべき復習（2回目）
-    status: 'active',
-    history: [
-      {
-        step: 1,
-        completedAt: addDays(getTodayString(), -6),
-        completedTimestamp: Date.now() - 6 * 86400000
-      }
-    ]
-  }
-];
+// 初期サンプルデータ（モックデータ）を動的に生成
+export function getMockItems(): StudyItem[] {
+  const today = getTodayString();
+  return [
+    {
+      id: 'sample-1',
+      title: '英単語 デュオ3.0 Section 1〜3',
+      createdAt: addDays(today, -1),
+      createdTimestamp: Date.now() - 86400000,
+      currentStep: 1,
+      nextDueDate: today, // 今日やるべき復習（1回目）
+      status: 'active',
+      history: []
+    },
+    {
+      id: 'sample-2',
+      title: '基本情報技術者 ネットワーク層の基礎',
+      createdAt: addDays(today, -7),
+      createdTimestamp: Date.now() - 7 * 86400000,
+      currentStep: 2,
+      nextDueDate: today, // 今日やるべき復習（2回目）
+      status: 'active',
+      history: [
+        {
+          step: 1,
+          completedAt: addDays(today, -6),
+          completedTimestamp: Date.now() - 6 * 86400000
+        }
+      ]
+    },
+    {
+      id: 'sample-3',
+      title: 'React Hooks（useEffectとuseCallback）',
+      createdAt: today,
+      createdTimestamp: Date.now(),
+      currentStep: 1,
+      nextDueDate: addDays(today, 1), // 今後の予定（明日）
+      status: 'active',
+      history: []
+    },
+    {
+      id: 'sample-4',
+      title: 'JavaScript 非同期処理（Promise/async/await）',
+      createdAt: addDays(today, -10),
+      createdTimestamp: Date.now() - 10 * 86400000,
+      currentStep: 2,
+      nextDueDate: addDays(today, -3),
+      status: 'completed', // 定着済み
+      history: [
+        {
+          step: 1,
+          completedAt: addDays(today, -9),
+          completedTimestamp: Date.now() - 9 * 86400000
+        },
+        {
+          step: 2,
+          completedAt: addDays(today, -3),
+          completedTimestamp: Date.now() - 3 * 86400000
+        }
+      ]
+    }
+  ];
+}
 
 export function loadItems(): StudyItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       // 初回はサンプルデータをセット
-      saveItems(INITIAL_ITEMS);
-      return INITIAL_ITEMS;
+      const mocks = getMockItems();
+      saveItems(mocks);
+      return mocks;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
     console.error('Failed to load study items from localStorage', e);
     return [];
   }
 }
+
 
 export function saveItems(items: StudyItem[]): void {
   try {

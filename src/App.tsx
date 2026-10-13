@@ -10,7 +10,7 @@ import { Toast } from './components/Toast';
 import { HelpModal } from './components/HelpModal';
 import { DataModal } from './components/DataModal';
 import type { StudyItem, ToastMessage } from './types';
-import { loadItems, saveItems, createStudyItem, progressReviewStep, rollbackCompletedItem, rollbackStep2ToStep1 } from './utils/storage';
+import { loadItems, saveItems, createStudyItem, progressReviewStep, rollbackCompletedItem, rollbackStep2ToStep1, getMockItems } from './utils/storage';
 import { getTodayString, formatJapaneseDate } from './utils/date';
 
 export const App: React.FC = () => {
@@ -145,6 +145,20 @@ export const App: React.FC = () => {
     });
   };
 
+  // モック（サンプル）データの読み込み
+  const handleLoadMockData = () => {
+    const mocks = getMockItems();
+    setItems(mocks);
+    saveItems(mocks);
+    setActiveTab('today');
+    showToast({
+      id: String(Date.now()),
+      title: 'サンプルデータを読み込みました',
+      message: '動作確認用の学習記録（全4件）をセットしました',
+      type: 'info'
+    });
+  };
+
   // トースト表示管理
   const showToast = (toastMsg: ToastMessage) => {
     setToast(toastMsg);
@@ -180,6 +194,7 @@ export const App: React.FC = () => {
               onComplete={handleCompleteReview}
               onDelete={handleDeleteItem}
               onEditTitle={handleEditTitle}
+              onLoadMock={handleLoadMockData}
             />
           )}
 
