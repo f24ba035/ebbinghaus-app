@@ -119,7 +119,6 @@ export const App: React.FC = () => {
     const updated = items.map((it) => (it.id === item.id ? rolledBack : it));
     setItems(updated);
     saveItems(updated);
-    setActiveTab('today');
 
     showToast({
       id: String(Date.now()),
@@ -135,7 +134,6 @@ export const App: React.FC = () => {
     const updated = items.map((it) => (it.id === item.id ? rolledBack : it));
     setItems(updated);
     saveItems(updated);
-    setActiveTab('today');
 
     showToast({
       id: String(Date.now()),
