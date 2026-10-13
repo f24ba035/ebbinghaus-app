@@ -100,3 +100,19 @@ export function progressReviewStep(item: StudyItem): { updatedItem: StudyItem; n
     return { updatedItem, nextDateLabel: '記憶定着完了' };
   }
 }
+
+// 定着済み（完了）を未完了状態（2回目の復習待ち）へロールバック
+export function rollbackCompletedItem(item: StudyItem): StudyItem {
+  const today = getTodayString();
+  // 履歴から直前の step: 2 完了ログを削除
+  const updatedHistory = item.history.filter((h) => h.step !== 2);
+
+  return {
+    ...item,
+    status: 'active',
+    currentStep: 2,
+    nextDueDate: today, // 今日やるべき復習に復活
+    history: updatedHistory
+  };
+}
+

@@ -1,15 +1,15 @@
 import React from 'react';
-import { Award, RotateCcw, Trash2, CheckCircle2 } from 'lucide-react';
+import { Award, Undo2, Trash2, CheckCircle2 } from 'lucide-react';
 import type { StudyItem } from '../types';
 import { formatJapaneseDate } from '../utils/date';
 
 interface CompletedListProps {
   items: StudyItem[];
-  onRestart: (item: StudyItem) => void;
+  onRollback: (item: StudyItem) => void;
   onDelete: (id: string) => void;
 }
 
-export const CompletedList: React.FC<CompletedListProps> = ({ items, onRestart, onDelete }) => {
+export const CompletedList: React.FC<CompletedListProps> = ({ items, onRollback, onDelete }) => {
   const completedItems = items.filter((item) => item.status === 'completed');
 
   if (completedItems.length === 0) {
@@ -85,12 +85,12 @@ export const CompletedList: React.FC<CompletedListProps> = ({ items, onRestart, 
                 </div>
 
                 <button
-                  onClick={() => onRestart(item)}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-white border border-slate-200 px-2.5 py-1 rounded-lg shadow-2xs hover:bg-slate-50 transition-all shrink-0"
-                  title="再度1回目の復習からやり直す"
+                  onClick={() => onRollback(item)}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 hover:text-blue-800 bg-blue-50 border border-blue-200/80 px-3 py-1.5 rounded-xl shadow-2xs hover:bg-blue-100 active:scale-95 transition-all shrink-0"
+                  title="2回目の復習（未完了）にロールバックする"
                 >
-                  <RotateCcw className="w-3 h-3" />
-                  もう一度学習
+                  <Undo2 className="w-3.5 h-3.5" />
+                  未完了に戻す
                 </button>
               </div>
             </div>

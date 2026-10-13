@@ -10,7 +10,7 @@ import { Toast } from './components/Toast';
 import { HelpModal } from './components/HelpModal';
 import { DataModal } from './components/DataModal';
 import type { StudyItem, ToastMessage } from './types';
-import { loadItems, saveItems, createStudyItem, progressReviewStep } from './utils/storage';
+import { loadItems, saveItems, createStudyItem, progressReviewStep, rollbackCompletedItem } from './utils/storage';
 import { getTodayString, formatJapaneseDate } from './utils/date';
 
 export const App: React.FC = () => {
@@ -113,27 +113,18 @@ export const App: React.FC = () => {
     saveItems(updated);
   };
 
-  // 定着済みからの再学習
-  const handleRestartStudy = (item: StudyItem) => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
-
-    const restarted: StudyItem = {
-      ...item,
-      currentStep: 1,
-      nextDueDate: tomorrowStr,
-      status: 'active'
-    };
-    const updated = items.map((it) => (it.id === item.id ? restarted : it));
+  // 定着済みから未完了（2回目の復習）へのロールバック
+  const handleRollbackCompleted = (item: StudyItem) => {
+    const rolledBack = rollbackCompletedItem(item);
+    const updated = items.map((it) => (it.id === item.id ? rolledBack : it));
     setItems(updated);
     saveItems(updated);
     setActiveTab('today');
 
     showToast({
       id: String(Date.now()),
-      title: '再学習を開始しました',
-      message: '明日に1回目の復習をセットしました',
+      title: '未完了に戻しました',
+      message: `「${item.title}」を2回目の復習待ち（今日やるべき復習）に戻しました`,
       type: 'info'
     });
   };
@@ -183,7 +174,7 @@ export const App: React.FC = () => {
           {activeTab === 'completed' && (
             <CompletedList
               items={items}
-              onRestart={handleRestartStudy}
+              onRollback={handleRollbackCompleted}
               onDelete={handleDeleteItem}
             />
           )}
