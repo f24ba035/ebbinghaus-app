@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, CheckCircle2, MoreVertical, Trash2, Edit3, BookOpen, Sparkles } from 'lucide-react';
+import { Check, CheckCircle2, MoreVertical, Trash2, Edit3, BookOpen } from 'lucide-react';
 import type { StudyItem } from '../types';
 import { formatJapaneseDate } from '../utils/date';
 
@@ -8,15 +8,13 @@ interface TodayReviewListProps {
   onComplete: (item: StudyItem) => void;
   onDelete: (id: string) => void;
   onEditTitle: (id: string, newTitle: string) => void;
-  onLoadMock?: () => void;
 }
 
 export const TodayReviewList: React.FC<TodayReviewListProps> = ({
   items,
   onComplete,
   onDelete,
-  onEditTitle,
-  onLoadMock
+  onEditTitle
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -37,28 +35,16 @@ export const TodayReviewList: React.FC<TodayReviewListProps> = ({
 
   if (items.length === 0) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center border border-slate-200/80 shadow-xs space-y-3">
-        <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+      <div className="bg-white rounded-2xl p-8 text-center border border-slate-200/80 shadow-xs space-y-2">
+        <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
           <CheckCircle2 className="w-8 h-8" />
         </div>
         <h3 className="text-base font-bold text-slate-800">
-          今日の復習はすべて完了！
+          今日の復習はありません
         </h3>
         <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
-          今日予定されていた復習はありません。新しく学んだことがあれば上のフォームから登録しましょう。
+          今日予定されている復習はありません。新しく学んだことがあれば、上の入力欄から記録しましょう！
         </p>
-
-        {onLoadMock && (
-          <div className="pt-2 border-t border-slate-100">
-            <button
-              onClick={onLoadMock}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3.5 py-2 rounded-xl transition-all"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-              動作確認用のサンプルデータを読み込む
-            </button>
-          </div>
-        )}
       </div>
     );
   }

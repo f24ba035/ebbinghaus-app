@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
-import { X, Download, Upload, Trash2, Database, Sparkles } from 'lucide-react';
+import { X, Download, Upload, Trash2, Database } from 'lucide-react';
 import type { StudyItem } from '../types';
-import { saveItems, getMockItems } from '../utils/storage';
+import { saveItems } from '../utils/storage';
 
 interface DataModalProps {
   isOpen: boolean;
@@ -51,17 +51,9 @@ export const DataModal: React.FC<DataModalProps> = ({ isOpen, onClose, items, on
     reader.readAsText(file);
   };
 
-  // サンプル（モック）データの再読み込み
-  const handleLoadMockData = () => {
-    const mocks = getMockItems();
-    saveItems(mocks);
-    onReload(mocks);
-    onClose();
-  };
-
   // 全データ初期化
   const handleReset = () => {
-    if (confirm('すべての学習記録を削除して初期化しますか？（後からいつでもサンプルデータを読み込むことも可能です）')) {
+    if (confirm('すべての学習記録を削除して初期化しますか？この操作は取り消せません。')) {
       saveItems([]);
       onReload([]);
       onClose();
@@ -89,15 +81,6 @@ export const DataModal: React.FC<DataModalProps> = ({ isOpen, onClose, items, on
         </p>
 
         <div className="space-y-2">
-          {/* サンプル（モック）データの復元ボタン */}
-          <button
-            onClick={handleLoadMockData}
-            className="w-full flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold py-2.5 px-4 rounded-xl border border-blue-200 transition-all"
-          >
-            <Sparkles className="w-4 h-4 text-blue-600" />
-            サンプル（モック）データを復元
-          </button>
-
           <button
             onClick={handleExport}
             className="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold py-2.5 px-4 rounded-xl transition-all"
