@@ -95,6 +95,9 @@ export const App: React.FC = () => {
 
   // 削除
   const handleDeleteItem = (id: string) => {
+    if (!confirm('この学習項目を削除しますか？')) {
+      return;
+    }
     const updated = items.filter((it) => it.id !== id);
     setItems(updated);
     saveItems(updated);
@@ -115,6 +118,10 @@ export const App: React.FC = () => {
 
   // 定着済みから未完了（2回目の復習）へのロールバック
   const handleRollbackCompleted = (item: StudyItem) => {
+    if (!confirm(`「${item.title}」を未完了に戻しますか？\n\n『今日やるべき復習（2回目）』に再度追加されます。`)) {
+      return;
+    }
+
     const rolledBack = rollbackCompletedItem(item);
     const updated = items.map((it) => (it.id === item.id ? rolledBack : it));
     setItems(updated);
@@ -130,6 +137,10 @@ export const App: React.FC = () => {
 
   // 2回目の復習待ち（今後の予定）から1回目の復習待ち（今日の復習）へのロールバック
   const handleRollbackStep1 = (item: StudyItem) => {
+    if (!confirm(`「${item.title}」を未完了に戻しますか？\n\n『今日やるべき復習（1回目）』に再度追加されます。`)) {
+      return;
+    }
+
     const rolledBack = rollbackStep2ToStep1(item);
     const updated = items.map((it) => (it.id === item.id ? rolledBack : it));
     setItems(updated);
