@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { QuickAddForm } from './components/QuickAddForm';
 import { TabNav } from './components/TabNav';
@@ -14,18 +14,12 @@ import { loadItems, saveItems, createStudyItem, progressReviewStep, rollbackComp
 import { getTodayString, formatJapaneseDate } from './utils/date';
 
 export const App: React.FC = () => {
-  const [items, setItems] = useState<StudyItem[]>([]);
+  const [items, setItems] = useState<StudyItem[]>(() => loadItems());
   const [activeTab, setActiveTab] = useState<TabType>('today');
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
   const [lastStateForUndo, setLastStateForUndo] = useState<StudyItem[] | null>(null);
-
-  // 初回読み込み
-  useEffect(() => {
-    const loaded = loadItems();
-    setItems(loaded);
-  }, []);
 
   const todayStr = getTodayString();
 
@@ -34,18 +28,32 @@ export const App: React.FC = () => {
     (item) => item.status === 'active' && item.nextDueDate <= todayStr
   );
 
+  // トースト表示管理
+  const showToast = (toastMsg: Omit<ToastMessage, 'id'>) => {
+    const newToast: ToastMessage = {
+      ...toastMsg,
+      id: 'toast_' + Math.random().toString(36).substring(2, 9)
+    };
+    setToast(newToast);
+    // 5秒後に自動消滅
+    setTimeout(() => {
+      setToast((prev) => (prev?.id === newToast.id ? null : prev));
+    }, 5000);
+  };
+
   // 新規学習の登録
   const handleAddItem = (title: string) => {
+    setLastStateForUndo([...items]);
     const newItem = createStudyItem(title);
     const updated = [newItem, ...items];
     setItems(updated);
     saveItems(updated);
 
     showToast({
-      id: String(Date.now()),
       title: '学習を記録しました',
       message: `明日（${formatJapaneseDate(newItem.nextDueDate)}）に1回目の復習をセットしました`,
-      type: 'info'
+      type: 'info',
+      undoAction: handleUndo
     });
   };
 
@@ -61,7 +69,6 @@ export const App: React.FC = () => {
 
     if (targetItem.currentStep === 1) {
       showToast({
-        id: String(Date.now()),
         title: '1回目の復習を完了！',
         message: `次回（2回目）は ${formatJapaneseDate(nextDateLabel)}（6日後）にセットされました`,
         type: 'success',
@@ -69,7 +76,6 @@ export const App: React.FC = () => {
       });
     } else {
       showToast({
-        id: String(Date.now()),
         title: '全ステップ達成！🎉',
         message: `「${targetItem.title}」の記憶定着が完了しました`,
         type: 'success',
@@ -85,7 +91,6 @@ export const App: React.FC = () => {
       saveItems(lastStateForUndo);
       setLastStateForUndo(null);
       showToast({
-        id: String(Date.now()),
         title: '元に戻しました',
         message: '直前の操作を取り消しました',
         type: 'info'
@@ -102,18 +107,34 @@ export const App: React.FC = () => {
     setItems(updated);
     saveItems(updated);
     showToast({
-      id: String(Date.now()),
       title: '削除しました',
       message: '学習項目を削除しました',
       type: 'info'
     });
   };
 
-  // タイトル編集
-  const handleEditTitle = (id: string, newTitle: string) => {
-    const updated = items.map((it) => (it.id === id ? { ...it, title: newTitle } : it));
+  // 項目編集（タイトルおよび復習期日）
+  const handleEditItem = (id: string, updates: { title?: string; nextDueDate?: string }) => {
+    const updated = items.map((it) => {
+      if (it.id !== id) return it;
+      return {
+        ...it,
+        title: updates.title !== undefined ? updates.title.trim() : it.title,
+        nextDueDate: updates.nextDueDate !== undefined ? updates.nextDueDate : it.nextDueDate
+      };
+    });
     setItems(updated);
     saveItems(updated);
+    showToast({
+      title: '更新しました',
+      message: '学習内容を保存しました',
+      type: 'info'
+    });
+  };
+
+  // タイトル編集（互換用）
+  const handleEditTitle = (id: string, newTitle: string) => {
+    handleEditItem(id, { title: newTitle });
   };
 
   // 定着済みから未完了（2回目の復習）へのロールバック
@@ -128,7 +149,6 @@ export const App: React.FC = () => {
     saveItems(updated);
 
     showToast({
-      id: String(Date.now()),
       title: '未完了に戻しました',
       message: `「${item.title}」を2回目の復習待ち（今日やるべき復習）に戻しました`,
       type: 'info'
@@ -147,20 +167,10 @@ export const App: React.FC = () => {
     saveItems(updated);
 
     showToast({
-      id: String(Date.now()),
       title: '未完了に戻しました',
       message: `「${item.title}」を1回目の復習待ち（今日やるべき復習）に戻しました`,
       type: 'info'
     });
-  };
-
-  // トースト表示管理
-  const showToast = (toastMsg: ToastMessage) => {
-    setToast(toastMsg);
-    // 5秒後に自動消滅
-    setTimeout(() => {
-      setToast((prev) => (prev?.id === toastMsg.id ? null : prev));
-    }, 5000);
   };
 
   return (
@@ -189,11 +199,17 @@ export const App: React.FC = () => {
               onComplete={handleCompleteReview}
               onDelete={handleDeleteItem}
               onEditTitle={handleEditTitle}
+              onEditItem={handleEditItem}
             />
           )}
 
           {activeTab === 'upcoming' && (
-            <UpcomingList items={items} onRollbackStep1={handleRollbackStep1} />
+            <UpcomingList
+              items={items}
+              onRollbackStep1={handleRollbackStep1}
+              onDelete={handleDeleteItem}
+              onEditItem={handleEditItem}
+            />
           )}
 
           {activeTab === 'completed' && (
@@ -201,6 +217,7 @@ export const App: React.FC = () => {
               items={items}
               onRollback={handleRollbackCompleted}
               onDelete={handleDeleteItem}
+              onEditTitle={handleEditTitle}
             />
           )}
         </div>

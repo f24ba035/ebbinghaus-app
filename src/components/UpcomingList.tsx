@@ -1,15 +1,43 @@
-import React from 'react';
-import { Calendar, CalendarDays, Undo2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, CalendarDays, Undo2, MoreVertical, Edit3, Trash2 } from 'lucide-react';
 import type { StudyItem } from '../types';
 import { formatJapaneseDate, getTodayString, getRelativeDateLabel } from '../utils/date';
 
 interface UpcomingListProps {
   items: StudyItem[];
   onRollbackStep1?: (item: StudyItem) => void;
+  onDelete: (id: string) => void;
+  onEditItem: (id: string, updates: { title?: string; nextDueDate?: string }) => void;
 }
 
-export const UpcomingList: React.FC<UpcomingListProps> = ({ items, onRollbackStep1 }) => {
+export const UpcomingList: React.FC<UpcomingListProps> = ({
+  items,
+  onRollbackStep1,
+  onDelete,
+  onEditItem
+}) => {
   const todayStr = getTodayString();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+
+  const startEdit = (item: StudyItem) => {
+    setEditingId(item.id);
+    setEditTitle(item.title);
+    setEditDueDate(item.nextDueDate);
+    setMenuOpenId(null);
+  };
+
+  const saveEdit = (id: string) => {
+    if (editTitle.trim()) {
+      onEditItem(id, {
+        title: editTitle.trim(),
+        nextDueDate: editDueDate || undefined
+      });
+    }
+    setEditingId(null);
+  };
 
   // 明日以降（nextDueDate > todayStr）で active なものを日付順にソート
   const upcomingItems = items
@@ -78,6 +106,54 @@ export const UpcomingList: React.FC<UpcomingListProps> = ({ items, onRollbackSte
                 {dateItems.map((item) => {
                   const isStep1 = item.currentStep === 1;
                   const hasCompletedStep1 = item.history.some((h) => h.step === 1);
+                  const isEditing = editingId === item.id;
+
+                  if (isEditing) {
+                    return (
+                      <div
+                        key={item.id}
+                        className="p-3 bg-slate-50 border border-blue-200 rounded-xl space-y-2 my-1"
+                      >
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                            学習タイトル
+                          </label>
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="w-full bg-white border border-blue-400 rounded-lg px-2.5 py-1.5 text-sm text-slate-900 focus:outline-none"
+                            autoFocus
+                          />
+                        </div>
+                        <div className="flex items-center justify-between gap-2 flex-wrap pt-1">
+                          <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                            <span className="text-[11px] font-bold">復習予定日:</span>
+                            <input
+                              type="date"
+                              value={editDueDate}
+                              onChange={(e) => setEditDueDate(e.target.value)}
+                              className="border border-slate-300 rounded-md px-1.5 py-0.5 text-xs text-slate-700 bg-white"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => saveEdit(item.id)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors"
+                            >
+                              保存
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1 rounded-lg"
+                            >
+                              取消
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
 
                   return (
                     <div
@@ -112,6 +188,39 @@ export const UpcomingList: React.FC<UpcomingListProps> = ({ items, onRollbackSte
                         >
                           {isStep1 ? '1回目の復習' : '2回目の復習'}
                         </span>
+
+                        {/* 操作メニュー */}
+                        <div className="relative">
+                          <button
+                            onClick={() => setMenuOpenId(menuOpenId === item.id ? null : item.id)}
+                            className="p-1 text-slate-400 hover:text-slate-700 rounded-md hover:bg-slate-100 transition-colors"
+                            aria-label="メニュー"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+
+                          {menuOpenId === item.id && (
+                            <div className="absolute right-0 top-7 bg-white border border-slate-200 shadow-lg rounded-xl py-1 z-20 w-28 text-xs font-medium">
+                              <button
+                                onClick={() => startEdit(item)}
+                                className="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                編集
+                              </button>
+                              <button
+                                onClick={() => {
+                                  onDelete(item.id);
+                                  setMenuOpenId(null);
+                                }}
+                                className="w-full px-3 py-2 text-left text-red-600 hover:bg-red-50 flex items-center gap-2"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                削除
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );

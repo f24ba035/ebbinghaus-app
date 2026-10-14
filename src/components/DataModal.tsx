@@ -44,7 +44,7 @@ export const DataModal: React.FC<DataModalProps> = ({ isOpen, onClose, items, on
         } else {
           alert('JSONファイルの形式が正しくありません。');
         }
-      } catch (err) {
+      } catch {
         alert('ファイルの読み込みに失敗しました。');
       }
     };

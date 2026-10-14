@@ -1,5 +1,5 @@
-import React from 'react';
-import { Award, Undo2, Trash2, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Award, Undo2, Trash2, CheckCircle2, Edit3 } from 'lucide-react';
 import type { StudyItem } from '../types';
 import { formatJapaneseDate } from '../utils/date';
 
@@ -7,9 +7,30 @@ interface CompletedListProps {
   items: StudyItem[];
   onRollback: (item: StudyItem) => void;
   onDelete: (id: string) => void;
+  onEditTitle: (id: string, newTitle: string) => void;
 }
 
-export const CompletedList: React.FC<CompletedListProps> = ({ items, onRollback, onDelete }) => {
+export const CompletedList: React.FC<CompletedListProps> = ({
+  items,
+  onRollback,
+  onDelete,
+  onEditTitle
+}) => {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+
+  const startEdit = (item: StudyItem) => {
+    setEditingId(item.id);
+    setEditTitle(item.title);
+  };
+
+  const saveEdit = (id: string) => {
+    if (editTitle.trim()) {
+      onEditTitle(id, editTitle.trim());
+    }
+    setEditingId(null);
+  };
+
   const completedItems = items.filter((item) => item.status === 'completed');
 
   if (completedItems.length === 0) {
@@ -41,6 +62,7 @@ export const CompletedList: React.FC<CompletedListProps> = ({ items, onRollback,
         {completedItems.map((item) => {
           const step1Log = item.history.find((h) => h.step === 1);
           const step2Log = item.history.find((h) => h.step === 2);
+          const isEditing = editingId === item.id;
 
           return (
             <div
@@ -58,19 +80,56 @@ export const CompletedList: React.FC<CompletedListProps> = ({ items, onRollback,
                       {formatJapaneseDate(item.createdAt)} 開始
                     </span>
                   </div>
-                  <h3 className="text-base font-bold text-slate-800 line-through decoration-slate-300">
-                    {item.title}
-                  </h3>
+
+                  {isEditing ? (
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="flex-1 border border-blue-400 rounded-lg px-2.5 py-1 text-sm text-slate-900 focus:outline-none"
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => saveEdit(item.id)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors"
+                      >
+                        保存
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="text-xs text-slate-500 hover:text-slate-700 px-1 py-1"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  ) : (
+                    <h3 className="text-base font-bold text-slate-800 line-through decoration-slate-300">
+                      {item.title}
+                    </h3>
+                  )}
                 </div>
 
-                <button
-                  onClick={() => onDelete(item.id)}
-                  className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-slate-50 transition-colors"
-                  title="削除"
-                  aria-label="削除"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {!isEditing && (
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <button
+                      onClick={() => startEdit(item)}
+                      className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-50 transition-colors"
+                      title="タイトルを編集"
+                      aria-label="タイトルを編集"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(item.id)}
+                      className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-slate-50 transition-colors"
+                      title="削除"
+                      aria-label="削除"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* 復習履歴ログ */}
