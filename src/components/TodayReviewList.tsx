@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Check, CheckCircle2, MoreVertical, Trash2, Edit3, BookOpen } from 'lucide-react';
 import type { StudyItem } from '../types';
 import { formatJapaneseDate } from '../utils/date';
+import { KanjiTodayBanner } from './KanjiTodayBanner';
 
 interface TodayReviewListProps {
   items: StudyItem[];
@@ -9,6 +10,8 @@ interface TodayReviewListProps {
   onDelete: (id: string) => void;
   onEditTitle: (id: string, newTitle: string) => void;
   onEditItem?: (id: string, updates: { title?: string; nextDueDate?: string }) => void;
+  kanjiDueCount?: number;
+  onStartKanjiTest?: () => void;
 }
 
 export const TodayReviewList: React.FC<TodayReviewListProps> = ({
@@ -16,7 +19,9 @@ export const TodayReviewList: React.FC<TodayReviewListProps> = ({
   onComplete,
   onDelete,
   onEditTitle,
-  onEditItem
+  onEditItem,
+  kanjiDueCount = 0,
+  onStartKanjiTest
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -44,7 +49,9 @@ export const TodayReviewList: React.FC<TodayReviewListProps> = ({
     setEditingId(null);
   };
 
-  if (items.length === 0) {
+  const totalDueCount = items.length + (kanjiDueCount > 0 ? 1 : 0);
+
+  if (items.length === 0 && kanjiDueCount === 0) {
     return (
       <div className="bg-white rounded-2xl p-8 text-center border border-slate-200/80 shadow-xs space-y-2">
         <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -65,7 +72,7 @@ export const TodayReviewList: React.FC<TodayReviewListProps> = ({
       <div className="flex items-center justify-between px-1">
         <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
           <BookOpen className="w-3.5 h-3.5 text-blue-500" />
-          今日やるべき復習（{items.length}件）
+          今日やるべき復習（{totalDueCount}件）
         </h2>
         <span className="text-[11px] text-slate-400">
           手元で復習後、完了をタップ
@@ -73,6 +80,11 @@ export const TodayReviewList: React.FC<TodayReviewListProps> = ({
       </div>
 
       <div className="space-y-2.5">
+        {/* 漢字復習カード（他の通常復習カードと全く同じ並びに1つの項目として配置） */}
+        {kanjiDueCount > 0 && onStartKanjiTest && (
+          <KanjiTodayBanner dueCount={kanjiDueCount} onStartTest={onStartKanjiTest} />
+        )}
+
         {items.map((item) => {
           const isStep1 = item.currentStep === 1;
 

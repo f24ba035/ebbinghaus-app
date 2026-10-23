@@ -1,23 +1,36 @@
 import React, { useRef } from 'react';
 import { X, Download, Upload, Trash2, Database } from 'lucide-react';
-import type { StudyItem } from '../types';
-import { saveItems } from '../utils/storage';
+import type { StudyItem, KanjiItem } from '../types';
+import { saveItems, saveKanjiItems } from '../utils/storage';
 
 interface DataModalProps {
   isOpen: boolean;
   onClose: () => void;
   items: StudyItem[];
-  onReload: (items: StudyItem[]) => void;
+  kanjiItems?: KanjiItem[];
+  onReload: (items: StudyItem[], kanjiItems?: KanjiItem[]) => void;
 }
 
-export const DataModal: React.FC<DataModalProps> = ({ isOpen, onClose, items, onReload }) => {
+export const DataModal: React.FC<DataModalProps> = ({
+  isOpen,
+  onClose,
+  items,
+  kanjiItems = [],
+  onReload
+}) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
   // JSONエクスポート
   const handleExport = () => {
-    const dataStr = JSON.stringify(items, null, 2);
+    const backupData = {
+      version: 2,
+      studyItems: items,
+      kanjiItems: kanjiItems,
+      exportedAt: new Date().toISOString()
+    };
+    const dataStr = JSON.stringify(backupData, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -37,9 +50,19 @@ export const DataModal: React.FC<DataModalProps> = ({ isOpen, onClose, items, on
       try {
         const parsed = JSON.parse(event.target?.result as string);
         if (Array.isArray(parsed)) {
+          // 旧形式（配列そのまま）
           saveItems(parsed);
-          onReload(parsed);
-          alert('データをインポートしました！');
+          onReload(parsed, kanjiItems);
+          alert('通常学習データをインポートしました！');
+          onClose();
+        } else if (parsed && typeof parsed === 'object') {
+          // 新形式（studyItems, kanjiItems を含むオブジェクト）
+          const loadedStudy = Array.isArray(parsed.studyItems) ? parsed.studyItems : [];
+          const loadedKanji = Array.isArray(parsed.kanjiItems) ? parsed.kanjiItems : [];
+          saveItems(loadedStudy);
+          saveKanjiItems(loadedKanji);
+          onReload(loadedStudy, loadedKanji);
+          alert('すべての学習データと漢字データをインポートしました！');
           onClose();
         } else {
           alert('JSONファイルの形式が正しくありません。');
@@ -53,9 +76,10 @@ export const DataModal: React.FC<DataModalProps> = ({ isOpen, onClose, items, on
 
   // 全データ初期化
   const handleReset = () => {
-    if (confirm('すべての学習記録を削除して初期化しますか？この操作は取り消せません。')) {
+    if (confirm('すべての通常学習記録および漢字記録を削除して初期化しますか？この操作は取り消せません。')) {
       saveItems([]);
-      onReload([]);
+      saveKanjiItems([]);
+      onReload([], []);
       onClose();
     }
   };
